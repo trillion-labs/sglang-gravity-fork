@@ -292,61 +292,16 @@ class HybridRadixCache(BasePrefixCache):
         if self.disable:
             return EvictResult()
         start_time = time.perf_counter()
-        full_num_evicted = 0
-        component_num_evicted = {name: 0 for name in self.component_order}
+        tracker = {name: 0 for name in self.component_names}
 
-        if params.num_tokens > 0:
-            x = self.lru_lists[BASE_COMPONENT_NAME].get_leaf_lru_no_lock()
-            while full_num_evicted < params.num_tokens and self.lru_lists[
-                BASE_COMPONENT_NAME
-            ].in_list(x):
-                full_delta, component_delta, x, x_next = self._evict_leaf_node(
-                    x, BASE_COMPONENT_NAME
-                )
-                full_num_evicted += full_delta
-                for component_name in self.component_order:
-                    component_num_evicted[component_name] += component_delta[
-                        component_name
-                    ]
-                if len(x.parent.children) == 0:
-                    x_next = self.lru_lists[BASE_COMPONENT_NAME].get_leaf_lru_no_lock()
-                x = x_next
+        for component in self.components.values():
+            component.drive_eviction(params, tracker)
 
-        for component_name in self.component_order:
-            if component_name == BASE_COMPONENT_NAME:
-                continue
-
-            component = self.components[component_name]
-            component_request = self._component_request(params, component_name)
-            if component_num_evicted[component_name] >= component_request:
-                continue
-            x = self.lru_lists[component_name].get_lru_no_lock()
-            while component_num_evicted[
-                component_name
-            ] < component_request and self.lru_lists[component_name].in_list(x):
-                assert x.component_value(component_name) is not None
-                if len(x.children) > 0:
-                    component_num_evicted[component_name] += component.evict_component(
-                        x, is_leaf=False
-                    )
-                    x_next = self.lru_lists[component_name].get_prev_no_lock(x)
-                    self.lru_lists[component_name].remove_node(x)
-                else:
-                    full_delta, component_delta, _, x_next = self._evict_leaf_node(
-                        x, component_name
-                    )
-                    full_num_evicted += full_delta
-                    for name in self.component_order:
-                        component_num_evicted[name] += component_delta[name]
-                x = x_next
-
-        self.update_eviction_metrics(
-            full_num_evicted + sum(component_num_evicted.values()), start_time
-        )
+        self.update_eviction_metrics(sum(tracker.values()), start_time)
         return EvictResult(
-            num_tokens_evicted=full_num_evicted,
-            swa_num_tokens_evicted=component_num_evicted.get("swa", 0),
-            mamba_num_evicted=component_num_evicted.get("mamba", 0),
+            num_tokens_evicted=tracker[BASE_COMPONENT_NAME],
+            swa_num_tokens_evicted=tracker.get("swa", 0),
+            mamba_num_evicted=tracker.get("mamba", 0),
         )
 
     def inc_lock_ref(self, node: HybridTreeNode) -> IncLockRefResult:
@@ -556,66 +511,59 @@ class HybridRadixCache(BasePrefixCache):
         v = node.parent.children.pop(key, None)
         assert v == node
 
-    def _iteratively_delete_tombstone_leaf(
-        self, node: HybridTreeNode
-    ) -> tuple[HybridTreeNode, int]:
-        full_num_evicted = 0
+    def _evict_component_and_detach_lru(
+        self,
+        node: HybridTreeNode,
+        comp,
+        is_leaf: bool,
+        tracker: dict[str, int],
+    ) -> int:
+        freed = comp.evict_component(node, is_leaf=is_leaf)
+        tracker[comp.name] += freed
+        lru = self.lru_lists[comp.name]
+        if lru.in_list(node):
+            lru.remove_node(node)
+        return freed
+
+    def _cascade_evict(self, node, trigger, tracker):
+        is_leaf = len(node.children) == 0
+        trigger_priority = trigger.eviction_priority(is_leaf)
+
+        for comp in self.components.values():
+            if comp.eviction_priority(is_leaf) <= trigger_priority:
+                if comp is not trigger and comp.node_has_component_data(node):
+                    assert node.component(comp.name).lock_ref == 0
+                    self._evict_component_and_detach_lru(
+                        node, comp, is_leaf=is_leaf, tracker=tracker
+                    )
+
+        if is_leaf:
+            self._remove_leaf_from_parent(node)
+            self._iteratively_delete_tombstone_leaf(node, tracker)
+
+    def _iteratively_delete_tombstone_leaf(self, node, tracker):
         while node.parent != self.root_node and len(node.parent.children) == 0:
-            if any(
-                node.parent.component_value(component_name) is not None
-                for component_name in self.component_order
-            ):
+            parent = node.parent
+            can_delete = True
+            for comp in self.components.values():
+                if not comp.node_has_component_data(parent):
+                    continue
+                if comp.name != BASE_COMPONENT_NAME:
+                    can_delete = False
+                    break
+                if parent.component(comp.name).lock_ref > 0:
+                    can_delete = False
+                    break
+            if not can_delete:
                 break
-            if node.parent.component(BASE_COMPONENT_NAME).lock_ref > 0:
-                break
-            assert all(
-                node.parent.component(component_name).lock_ref == 0
-                for component_name in self.component_order
-            )
-            full_num_evicted += self.components[BASE_COMPONENT_NAME].evict_component(
-                node.parent, is_leaf=True
-            )
-            self.lru_lists[BASE_COMPONENT_NAME].remove_node(node.parent)
-            self._remove_leaf_from_parent(node.parent)
-            node = node.parent
-        return node, full_num_evicted
-
-    def _evict_leaf_node(
-        self, node: HybridTreeNode, trigger_component_name: str
-    ) -> tuple[int, dict[str, int], HybridTreeNode, Optional[HybridTreeNode]]:
-        assert all(
-            node.component(component_name).lock_ref == 0
-            for component_name, component in self.components.items()
-            if component.node_has_component_data(node)
-        )
-        num_evicted = {}
-        for component_name, component in self.components.items():
-            if not component.node_has_component_data(node):
-                num_evicted[component_name] = 0
-                continue
-            num_evicted[component_name] = component.evict_component(node, is_leaf=True)
-        full_num_evicted = num_evicted[BASE_COMPONENT_NAME]
-        component_num_evicted = {
-            name: num_evicted[name] for name in self.component_order
-        }
-
-        if trigger_component_name == BASE_COMPONENT_NAME:
-            next_node = self.lru_lists[BASE_COMPONENT_NAME].get_prev_leaf_no_lock(node)
-        else:
-            next_node = self.lru_lists[trigger_component_name].get_prev_no_lock(node)
-
-        self._for_each_component_lru(node, HybridLRUList.remove_node)
-        self._remove_leaf_from_parent(node)
-        node, extra_full = self._iteratively_delete_tombstone_leaf(node)
-        full_num_evicted += extra_full
-        return full_num_evicted, component_num_evicted, node, next_node
-
-    def _component_request(self, params: EvictParams, component_name: str) -> int:
-        if component_name == "mamba":
-            return params.mamba_num
-        if component_name == "swa":
-            return params.swa_num_tokens
-        return 0
+            
+            for comp in self.components.values():
+                if comp.node_has_component_data(parent):
+                    self._evict_component_and_detach_lru(
+                        parent, comp, is_leaf=True, tracker=tracker
+                    )
+            self._remove_leaf_from_parent(parent)
+            node = parent
 
     ## Other Apis for Usage Checking
     @property

@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Callable, Optional
 
 from sglang.srt.mem_cache.base_prefix_cache import (
     DecLockRefParams,
+    EvictParams,
     IncLockRefResult,
 )
 from sglang.srt.mem_cache.hybrid_cache.tree_component import (
@@ -33,6 +34,21 @@ class FullComponent(TreeComponent):
         freed = len(node.full_value)
         self.cache.component_evictable_size_[self.name] -= freed
         return freed
+
+    def eviction_priority(self, is_leaf: bool) -> int:
+        return 0 if is_leaf else 1
+
+    def drive_eviction(self, params: EvictParams, tracker: dict[str, int]) -> None:
+        request = params.num_tokens
+        lru = self.cache.lru_lists[self.name]
+        while tracker[self.name] < request:
+            x = lru.get_leaf_lru_no_lock()
+            if x is None:
+                break
+            self.cache._evict_component_and_detach_lru(
+                x, self, is_leaf=True, tracker=tracker
+            )
+            self.cache._cascade_evict(x, self, tracker)
 
     def acquire_component_lock(
         self, node: "HybridTreeNode", result: IncLockRefResult

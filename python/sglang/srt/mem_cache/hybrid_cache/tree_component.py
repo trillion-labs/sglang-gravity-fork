@@ -9,6 +9,7 @@ from numpy import float64
 
 from sglang.srt.mem_cache.base_prefix_cache import (
     DecLockRefParams,
+    EvictParams,
     IncLockRefResult,
     InsertParams,
     InsertResult,
@@ -163,6 +164,28 @@ class TreeComponent(ABC):
           only tombstones on internal nodes.
         - Mamba: frees mamba value via mamba_token_to_kv_pool_allocator;
           only tombstones on internal nodes."""
+        ...
+
+    def eviction_priority(self, is_leaf: bool) -> int:
+        """Eviction priority on this node type. Higher = evicted later.
+        When a component is evicted, all other components with equal or
+        lower priority on the same node are also cascade-evicted.
+        Leaf: all components equal (0) — evicting any cascades to all.
+        Internal: full=1, others=0 — evicting mamba cascades to swa,
+        but not full.
+        - Full: leaf=0, internal=1.
+        - Mamba/SWA: always 0."""
+        return 0
+
+    @abstractmethod
+    def drive_eviction(self, params: EvictParams, tracker: dict[str, int]) -> None:
+        """Drive eviction from this component's LRU list.
+        Each component extracts its own request from params, walks its own
+        LRU, evicts, and calls cache._cascade_evict for priority cascade.
+        Updates the shared tracker with freed amounts for all components.
+        - Full: walks leaf LRU, evicts full then cascades entire leaf.
+        - Mamba: walks full LRU; tombstones internal nodes (with cascade
+          to equal-priority components like swa), cascades leaves to all."""
         ...
 
     @abstractmethod
