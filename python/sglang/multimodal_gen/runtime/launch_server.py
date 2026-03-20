@@ -16,10 +16,10 @@ from sglang.multimodal_gen.runtime.server_args import (
     prepare_server_args,
     set_global_server_args,
 )
+from sglang.multimodal_gen.runtime.utils.logging_utils import configure_logger, logger
 from sglang.multimodal_gen.runtime.utils.request_abort import (
     init_request_abort_state,
 )
-from sglang.multimodal_gen.runtime.utils.logging_utils import configure_logger, logger
 
 _abort_manager = None
 

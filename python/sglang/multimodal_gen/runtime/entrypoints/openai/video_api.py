@@ -405,6 +405,7 @@ async def retrieve_video(video_id: str = Path(...)):
         raise HTTPException(status_code=404, detail="Video not found")
     return VideoResponse(**job)
 
+
 @router.delete("/{video_id}", response_model=VideoResponse)
 async def delete_video(video_id: str = Path(...)):
     job = await VIDEO_STORE.get(video_id)
