@@ -259,49 +259,19 @@ class DecodeInputBuffers(ForwardInputBuffers):
         raw_num_token: int,
         bs: int,
         seq_len_fill_value: int,
-        encoder_len_fill_value: int,
         require_gathered_buffer: bool,
         num_tokens_per_bs: int,
         nsa_enable_prefill_cp: bool,
         enable_num_token_non_padded_flag: bool,
         pp_proxy_tensors: Optional[PPProxyTensors] = None,
     ):
-        max_num_token = bs * num_tokens_per_bs
         if bs != raw_bs:
             self.seq_lens.fill_(seq_len_fill_value)
             self.out_cache_loc.zero_()
-            if self.encoder_lens is not None:
-                self.encoder_lens.fill_(encoder_len_fill_value)
             if self.mamba_track_indices is not None:
                 self.mamba_track_indices.zero_()
             if self.mamba_track_mask is not None:
                 self.mamba_track_mask.fill_(False)
-
-            # Replay kernels still see the padded slots at capture batch size.
-            # Point them at a known-live request row instead of leaving stale
-            # req_pool_indices from a previous larger replay in place.
-            if raw_bs > 0:
-                self.req_pool_indices[raw_bs:bs].copy_(
-                    forward_batch.req_pool_indices[:1].expand(bs - raw_bs)
-                )
-            else:
-                self.req_pool_indices.zero_()
-
-            if raw_num_token < max_num_token:
-                if raw_num_token > 0:
-                    self.input_ids[raw_num_token:max_num_token].copy_(
-                        forward_batch.input_ids[:1].expand(
-                            max_num_token - raw_num_token
-                        )
-                    )
-                    self.positions[raw_num_token:max_num_token].copy_(
-                        forward_batch.positions[:1].expand(
-                            max_num_token - raw_num_token
-                        )
-                    )
-                else:
-                    self.input_ids.zero_()
-                    self.positions.zero_()
 
         # Build batched copy lists for all GPU tensors.
         dsts = [
@@ -619,7 +589,6 @@ class CudaGraphRunner:
             if self.dllm_config is None
             else self.dllm_config.block_size
         )
-
         self.encoder_len_fill_value = 0
         if self.is_encoder_decoder:
             self.encoder_len_fill_value = int(
@@ -1120,7 +1089,6 @@ class CudaGraphRunner:
             raw_num_token=raw_num_token,
             bs=bs,
             seq_len_fill_value=self.seq_len_fill_value,
-            encoder_len_fill_value=self.encoder_len_fill_value,
             require_gathered_buffer=self.require_gathered_buffer,
             num_tokens_per_bs=self.num_tokens_per_bs,
             nsa_enable_prefill_cp=self.nsa_enable_prefill_cp,
