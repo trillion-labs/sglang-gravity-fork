@@ -108,25 +108,10 @@ class QuarkConfig(QuantizationConfig):
     def from_config(cls, config: dict[str, Any]) -> "QuarkConfig":
         export_config = config.get("export")
         if export_config is None:
-            if config.get("global_quant_config") is not None:
-                logger.warning(
-                    "Quark config missing 'export' key, inferring defaults. "
-                    "Consider updating the model's config.json with proper "
-                    "Quark export metadata."
-                )
-                export_config = {
-                    "kv_cache_group": [],
-                    "pack_method": "reorder",
-                    "weight_format": "real_quantized",
-                    "weight_merge_groups": None,
-                }
-                config.setdefault("layer_quant_config", {})
-                config.setdefault("layer_type_quant_config", {})
-            else:
-                raise ValueError(
-                    "The export key should be included in "
-                    "the configurations of Quark quantized model"
-                )
+            raise ValueError(
+                "The export key should be included in "
+                "the configurations of Quark quantized model"
+            )
 
         kv_cache_group = cast(list[str], export_config.get("kv_cache_group"))
         pack_method = cast(str, export_config.get("pack_method"))
@@ -317,14 +302,16 @@ class QuarkConfig(QuantizationConfig):
                 )
             return shard_configs[0]
         else:
-            layer_quant_config = self.quant_config.get("layer_quant_config") or {}
+            layer_quant_config = cast(
+                dict[str, Any], self.quant_config.get("layer_quant_config")
+            )
             for name_pattern in layer_quant_config:
                 if fnmatch.fnmatch(layer_name, name_pattern):
                     return layer_quant_config[name_pattern]
 
             layer_type = type(module).__name__
-            layer_type_quant_config = (
-                self.quant_config.get("layer_type_quant_config") or {}
+            layer_type_quant_config = cast(
+                dict[str, Any], self.quant_config.get("layer_type_quant_config")
             )
             if layer_type in layer_type_quant_config:
                 return layer_type_quant_config[layer_type]
