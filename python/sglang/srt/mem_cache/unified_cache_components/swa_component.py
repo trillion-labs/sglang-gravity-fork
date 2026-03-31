@@ -19,6 +19,7 @@ from sglang.srt.mem_cache.unified_cache_components.tree_component import (
 
 if TYPE_CHECKING:
     from sglang.srt.managers.schedule_batch import Req
+    from sglang.srt.mem_cache.cache_init_params import CacheInitParams
     from sglang.srt.mem_cache.unified_radix_cache import (
         UnifiedRadixCache,
         UnifiedTreeNode,
@@ -35,13 +36,14 @@ class SWAComponent(TreeComponent):
     value stays intact.
     """
 
-    def __init__(self, cache: UnifiedRadixCache):
+    def __init__(self, cache: UnifiedRadixCache, params: CacheInitParams):
         from sglang.srt.mem_cache.swa_memory_pool import SWATokenToKVPoolAllocator
 
         assert isinstance(
             cache.token_to_kv_pool_allocator, SWATokenToKVPoolAllocator
         ), f"SWAComponent requires SWATokenToKVPoolAllocator, got {type(cache.token_to_kv_pool_allocator)}"
-        super().__init__(cache)
+        super().__init__(cache, params)
+        self.sliding_window_size = params.sliding_window_size
 
     @property
     def component_type(self) -> ComponentType:
@@ -53,7 +55,7 @@ class SWAComponent(TreeComponent):
         )
 
     def create_match_validator(self) -> Callable[[UnifiedTreeNode], bool]:
-        sliding_window_size = self.cache.sliding_window_size
+        sliding_window_size = self.sliding_window_size
         ct = self.component_type
         state = {"len": float("inf")}
 
@@ -213,7 +215,7 @@ class SWAComponent(TreeComponent):
     def acquire_component_lock(
         self, node: UnifiedTreeNode, result: IncLockRefResult
     ) -> IncLockRefResult:
-        sliding_window_size = self.cache.sliding_window_size
+        sliding_window_size = self.sliding_window_size
         swa_lock_size = 0
         swa_uuid_for_lock = None
 

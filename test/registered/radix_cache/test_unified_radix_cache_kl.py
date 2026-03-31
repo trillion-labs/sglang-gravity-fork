@@ -233,6 +233,7 @@ class TestUnifiedSWARadixCache(UnifiedRadixTreeTestMixin, CustomTestCase):
     """SWA hybrid + UnifiedRadixCache."""
 
     kl_threshold = 0.025
+    gsm8k_threshold = 0.75
 
     @classmethod
     def setUpClass(cls):
@@ -247,6 +248,7 @@ class TestUnifiedSWARadixCache(UnifiedRadixTreeTestMixin, CustomTestCase):
                 "2",
                 "--mem-fraction-static",
                 "0.80",
+                "--disable-piecewise-cuda-graph"
             ],
             env={"SGLANG_ENABLE_UNIFIED_RADIX_TREE": "1"},
         )

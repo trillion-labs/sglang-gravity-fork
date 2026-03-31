@@ -191,9 +191,7 @@ class UnifiedRadixCache(BasePrefixCache):
         self.token_to_kv_pool_allocator = params.token_to_kv_pool_allocator
         self.page_size = params.page_size
         self.disable = params.disable
-        self.enable_mamba_extra_buffer = params.enable_mamba_extra_buffer
         self.is_eagle = params.is_eagle
-        self.sliding_window_size = params.sliding_window_size
 
         if self.token_to_kv_pool_allocator:
             self.device = self.token_to_kv_pool_allocator.device
@@ -213,7 +211,7 @@ class UnifiedRadixCache(BasePrefixCache):
         assert params.tree_components is not None
         self.tree_components = list(params.tree_components)
         self.components: dict[str, TreeComponent] = {
-            ct: COMPONENT_REGISTRY[ct](self) for ct in self.tree_components
+            ct: COMPONENT_REGISTRY[ct](self, params) for ct in self.tree_components
         }
         if self.is_eagle:
             self.key_convert_fn = convert_to_bigram_key
@@ -733,6 +731,11 @@ class UnifiedRadixCache(BasePrefixCache):
 
     def supports_swa(self) -> bool:
         return ComponentType.SWA in self.components
+
+    @property
+    def sliding_window_size(self):
+        swa = self.components.get(ComponentType.SWA)
+        return swa.sliding_window_size if swa else None
 
     def supports_mamba(self) -> bool:
         return ComponentType.MAMBA in self.components

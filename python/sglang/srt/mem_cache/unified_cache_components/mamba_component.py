@@ -22,6 +22,7 @@ from sglang.srt.server_args import get_global_server_args
 
 if TYPE_CHECKING:
     from sglang.srt.managers.schedule_batch import Req
+    from sglang.srt.mem_cache.cache_init_params import CacheInitParams
     from sglang.srt.mem_cache.unified_radix_cache import (
         UnifiedRadixCache,
         UnifiedTreeNode,
@@ -29,17 +30,18 @@ if TYPE_CHECKING:
 
 
 class MambaComponent(TreeComponent):
-    def __init__(self, cache: UnifiedRadixCache):
+    def __init__(self, cache: UnifiedRadixCache, params: CacheInitParams):
         from sglang.srt.mem_cache.memory_pool import HybridReqToTokenPool
 
         assert isinstance(
             cache.req_to_token_pool, HybridReqToTokenPool
         ), f"MambaComponent requires HybridReqToTokenPool, got {type(cache.req_to_token_pool)}"
-        if not cache.enable_mamba_extra_buffer:
+        if not params.enable_mamba_extra_buffer:
             assert (
                 cache.page_size == 1
             ), f"MambaComponent requires page_size=1 when mamba_extra_buffer is disabled, got {cache.page_size}"
-        super().__init__(cache)
+        super().__init__(cache, params)
+        self.enable_mamba_extra_buffer = params.enable_mamba_extra_buffer
 
     @property
     def component_type(self) -> ComponentType:
@@ -187,13 +189,13 @@ class MambaComponent(TreeComponent):
     ) -> Optional[int]:
         cache_len = (
             req.mamba_last_track_seqlen
-            if self.cache.enable_mamba_extra_buffer
+            if self.enable_mamba_extra_buffer
             else token_ids_len
         )
         if is_finished:
             if cache_len is None:
                 cache_len = 0
-            if self.cache.enable_mamba_extra_buffer:
+            if self.enable_mamba_extra_buffer:
                 keep_idx = self.cache.req_to_token_pool.get_mamba_ping_pong_other_idx(
                     req.mamba_next_track_idx
                 )
@@ -207,7 +209,7 @@ class MambaComponent(TreeComponent):
         else:
             if cache_len is None:
                 return 0
-            if self.cache.enable_mamba_extra_buffer:
+            if self.enable_mamba_extra_buffer:
                 keep_idx = self.cache.req_to_token_pool.get_mamba_ping_pong_other_idx(
                     req.mamba_next_track_idx
                 )
@@ -241,7 +243,7 @@ class MambaComponent(TreeComponent):
             mamba_exist = (
                 insert_result.mamba_exist if insert_result is not None else True
             )
-            if self.cache.enable_mamba_extra_buffer:
+            if self.enable_mamba_extra_buffer:
                 keep_idx = self.cache.req_to_token_pool.get_mamba_ping_pong_other_idx(
                     req.mamba_next_track_idx
                 )
@@ -250,7 +252,7 @@ class MambaComponent(TreeComponent):
             if mamba_exist:
                 keep_idx = None
             free_mamba_cache = (
-                True if self.cache.enable_mamba_extra_buffer else mamba_exist
+                True if self.enable_mamba_extra_buffer else mamba_exist
             )
             if free_mamba_cache:
                 self.cache.req_to_token_pool.free_mamba_cache(

@@ -20,6 +20,7 @@ from sglang.srt.mem_cache.base_prefix_cache import (
 
 if TYPE_CHECKING:
     from sglang.srt.managers.schedule_batch import Req
+    from sglang.srt.mem_cache.cache_init_params import CacheInitParams
     from sglang.srt.mem_cache.unified_radix_cache import (
         UnifiedRadixCache,
         UnifiedTreeNode,
@@ -71,7 +72,7 @@ def gen_component_uuid() -> int:
 
 
 class TreeComponent(ABC):
-    def __init__(self, cache: UnifiedRadixCache):
+    def __init__(self, cache: UnifiedRadixCache, params: CacheInitParams):
         self.cache = cache
 
     def node_has_component_data(self, node: UnifiedTreeNode) -> bool:
