@@ -920,6 +920,11 @@ class ServerArgs:
                     "Granian does not support SSL certificate hot-reloading. "
                     "Use Uvicorn (the default) or handle certificate rotation externally."
                 )
+            if self.tokenizer_worker_num > 1:
+                raise ValueError(
+                    "--enable-http2 does not yet support --tokenizer-worker-num > 1. "
+                    "Multi-worker HTTP/2 support will be added in a future release."
+                )
 
     def _handle_deprecated_args(self):
         # Handle deprecated tool call parsers
@@ -3825,9 +3830,9 @@ class ServerArgs:
             "--enable-http2",
             action="store_true",
             default=ServerArgs.enable_http2,
-            help="Use Granian (HTTP/2) instead of Uvicorn (HTTP/1.1) as the ASGI server. "
-            "Requires 'pip install sglang[http2]'. Serves h2c (cleartext HTTP/2) by default "
-            "and serves h2 over TLS when --ssl-certfile and --ssl-keyfile are provided.",
+            help="Use Granian instead of Uvicorn as the ASGI server, enabling HTTP/1.1 and "
+            "HTTP/2 auto-negotiation. Clients may use h2c (cleartext HTTP/2) or plain HTTP/1.1. "
+            "Requires 'pip install sglang[http2]'.",
         )
 
         # Quantization and data type

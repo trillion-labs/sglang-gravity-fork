@@ -208,13 +208,6 @@ def get_global_state() -> _GlobalState:
 
 
 async def _init_granian_worker() -> ServerArgs:
-    """Initialize a Granian worker by creating a full TokenizerManager.
-
-    Unlike init_multi_tokenizer (which creates a lightweight TokenizerWorker
-    that talks to a MultiTokenizerRouter), this creates a direct
-    TokenizerManager that connects to the scheduler, suitable for Granian's
-    single-tokenizer mode.
-    """
     main_pid = get_main_process_id()
     port_args, server_args, scheduler_info = read_from_shared_memory(
         f"multi_tokenizer_args_{main_pid}"
@@ -2036,10 +2029,11 @@ def _close_main_process_sockets():
             inner.close()
         elif hasattr(sock, "close"):
             sock.close()
+        setattr(tm, attr, None)
 
 
 def _run_granian_server(server_args: ServerArgs):
-    """Launch Granian with HTTP/2 support."""
+    """Launch Granian with HTTP/2 support"""
     from granian import Granian
     from granian.constants import HTTPModes, Interfaces, Loops
 
@@ -2051,7 +2045,7 @@ def _run_granian_server(server_args: ServerArgs):
         http=HTTPModes.auto,
         loop=Loops.uvloop,
         log_level=server_args.log_level_http or server_args.log_level or "info",
-        workers=server_args.tokenizer_worker_num,
+        workers=1,
     )
 
     ssl_enabled = server_args.ssl_certfile and server_args.ssl_keyfile
@@ -2111,7 +2105,9 @@ def _setup_and_run_http_server(
                 f"Starting Granian HTTP/2 server on "
                 f"{server_args.host}:{server_args.port}"
             )
-            # Set the main process PID for shared memory lookup
+            # Propagate the main process PID via os.environ so Granian
+            # workers (forked or spawned) can locate the shared memory
+            # segment created above.
             envs.SGLANG_GRANIAN_PARENT_PID.set(os.getpid())
             _close_main_process_sockets()
             _run_granian_server(server_args)
