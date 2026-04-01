@@ -146,6 +146,7 @@ class SchedulerMetricsMixin:
                 labels=labels,
                 enable_lora=self.enable_lora,
                 enable_hierarchical_cache=self.enable_hierarchical_cache,
+                enable_streaming_session=self.server_args.enable_streaming_session,
                 server_args=self.server_args,
             )
 

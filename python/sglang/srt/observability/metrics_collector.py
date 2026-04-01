@@ -178,6 +178,7 @@ class SchedulerMetricsCollector:
         labels: Dict[str, str],
         enable_lora: bool = False,
         enable_hierarchical_cache: bool = False,
+        enable_streaming_session: bool = False,
         server_args: Optional["ServerArgs"] = None,
     ) -> None:
         # We need to import prometheus_client after setting the env variable `PROMETHEUS_MULTIPROC_DIR`
@@ -186,6 +187,7 @@ class SchedulerMetricsCollector:
         self.labels = labels
         self.enable_lora = enable_lora
         self.enable_hierarchical_cache = enable_hierarchical_cache
+        self.enable_streaming_session = enable_streaming_session
         self.last_log_time = time.perf_counter()
         self._known_priorities: Set[int] = set()
 
@@ -274,19 +276,6 @@ class SchedulerMetricsCollector:
             labelnames=labels.keys(),
             multiprocess_mode="mostrecent",
         )
-        self.num_streaming_sessions = Gauge(
-            name="sglang:num_streaming_sessions",
-            documentation="The number of active streaming sessions.",
-            labelnames=labels.keys(),
-            multiprocess_mode="mostrecent",
-        )
-        self.streaming_session_held_tokens = Gauge(
-            name="sglang:streaming_session_held_tokens",
-            documentation="The number of KV tokens currently held by streaming session slots.",
-            labelnames=labels.keys(),
-            multiprocess_mode="mostrecent",
-        )
-
         # Speculative decoding
         self.spec_accept_length = Gauge(
             name="sglang:spec_accept_length",
@@ -668,6 +657,21 @@ class SchedulerMetricsCollector:
                 multiprocess_mode="mostrecent",
             )
 
+        # Streaming session metrics (only created when streaming sessions are enabled)
+        if self.enable_streaming_session:
+            self.num_streaming_sessions = Gauge(
+                name="sglang:num_streaming_sessions",
+                documentation="The number of active streaming sessions.",
+                labelnames=labels.keys(),
+                multiprocess_mode="mostrecent",
+            )
+            self.streaming_session_held_tokens = Gauge(
+                name="sglang:streaming_session_held_tokens",
+                documentation="The number of KV tokens currently held by streaming session slots.",
+                labelnames=labels.keys(),
+                multiprocess_mode="mostrecent",
+            )
+
         self.num_unique_running_routing_keys = Gauge(
             name="sglang:num_unique_running_routing_keys",
             documentation="Number of unique routing keys in running batch.",
@@ -964,10 +968,6 @@ class SchedulerMetricsCollector:
         self._log_gauge(self.cache_hit_rate, stats.cache_hit_rate)
 
         self._log_gauge(self.max_total_num_tokens, stats.max_total_num_tokens)
-        self._log_gauge(self.num_streaming_sessions, stats.num_streaming_sessions)
-        self._log_gauge(
-            self.streaming_session_held_tokens, stats.streaming_session_held_tokens
-        )
 
         # Speculative decoding
         self._log_gauge(self.spec_accept_length, stats.spec_accept_length)
@@ -1022,6 +1022,13 @@ class SchedulerMetricsCollector:
             )
             self._log_gauge(
                 self.hicache_host_total_tokens, stats.hicache_host_total_tokens
+            )
+
+        # Streaming session metrics (only logged if streaming sessions are enabled)
+        if self.enable_streaming_session:
+            self._log_gauge(self.num_streaming_sessions, stats.num_streaming_sessions)
+            self._log_gauge(
+                self.streaming_session_held_tokens, stats.streaming_session_held_tokens
             )
 
         self._log_gauge(
