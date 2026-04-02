@@ -304,11 +304,12 @@ class SessionController:
             # session for deferred cleanup: the request keeps its session
             # reference so cache_finished_req takes the streaming path,
             # and we schedule release_session for after it completes.
-            session.pending_close = True
-            logger.info(
-                "Deferring session close for %s (active request still decoding)",
-                session_id,
-            )
+            if not session.pending_close:
+                session.pending_close = True
+                logger.info(
+                    "Deferring session close for %s (active request still decoding)",
+                    session_id,
+                )
             return
 
         # No active request -- safe to release immediately.
