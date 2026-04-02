@@ -75,6 +75,8 @@ SRT_REPO_DIR="$LUSTRE_WORKSPACE/srt-slurm"
 git clone https://github.com/csahithi/srt-slurm.git "$SRT_REPO_DIR"
 cd "$SRT_REPO_DIR"
 git checkout "$SRT_SLURM_BRANCH"
+echo "--- srt-slurm last commit ---"
+git log -1 --format="commit %H%nauthor %an%ndate   %ad%nsubject %s" --date=iso
 
 curl -LsSf https://astral.sh/uv/install.sh | sh
 source "$HOME/.local/bin/env"
