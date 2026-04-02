@@ -93,6 +93,7 @@ class Session:
         self.timeout = timeout
         self.last_active_time: float = time.monotonic()
         self.req_nodes: Dict[str, SessionReqNode] = {}
+        self.pending_close: bool = False
 
     def is_timed_out(self) -> bool:
         if self.timeout is None:
@@ -290,11 +291,30 @@ class SessionController:
 
     def _close(self, session_id: str):
         session = self.sessions[session_id]
+        has_active_request = False
         if session.streaming and session.req_nodes:
             assert len(session.req_nodes) == 1
             req = next(iter(session.req_nodes.values())).req
             if not req.finished():
-                req.session = None
+                has_active_request = True
+
+        if has_active_request:
+            # An in-flight request is still decoding on this session's KV
+            # memory. Freeing now would corrupt the scheduler. Mark the
+            # session for deferred cleanup: the request keeps its session
+            # reference so cache_finished_req takes the streaming path,
+            # and we schedule release_session for after it completes.
+            session.pending_close = True
+            logger.info(
+                "Deferring session close for %s (active request still decoding)",
+                session_id,
+            )
+            return
+
+        # No active request -- safe to release immediately.
+        if session.streaming and session.req_nodes:
+            req = next(iter(session.req_nodes.values())).req
+            req.session = None
 
         # Release multimodal features held by session requests.
         # Session reqs skip the normal mm cleanup path (scheduler and
@@ -318,12 +338,35 @@ class SessionController:
         # reap sessions every second
         if now - self._last_reap_time > interval:
             self._last_reap_time = now
+
+            # Finish deferred closes for sessions whose requests completed.
+            pending = [
+                sid
+                for sid, session in self.sessions.items()
+                if session.pending_close and self._all_requests_finished(session)
+            ]
+            for sid in pending:
+                log_info_on_rank0(
+                    logger, f"Deferred close ready for session {sid}, releasing."
+                )
+                # Reset pending_close so _close proceeds with the release.
+                self.sessions[sid].pending_close = False
+                self._close(sid)
+
             timed_out = [
-                sid for sid, session in self.sessions.items() if session.is_timed_out()
+                sid
+                for sid, session in self.sessions.items()
+                if session.is_timed_out()
             ]
             for sid in timed_out:
                 log_info_on_rank0(logger, f"Session {sid} timed out, closing.")
                 self._close(sid)
+
+    @staticmethod
+    def _all_requests_finished(session: "Session") -> bool:
+        if not session.req_nodes:
+            return True
+        return all(node.req.finished() for node in session.req_nodes.values())
 
     @staticmethod
     def adjust_mm_offsets(recv_req: TokenizedGenerateReqInput, req: Req, image_inputs):
