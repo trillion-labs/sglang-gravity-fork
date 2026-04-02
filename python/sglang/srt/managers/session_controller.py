@@ -354,9 +354,7 @@ class SessionController:
                 self._close(sid)
 
             timed_out = [
-                sid
-                for sid, session in self.sessions.items()
-                if session.is_timed_out()
+                sid for sid, session in self.sessions.items() if session.is_timed_out()
             ]
             for sid in timed_out:
                 log_info_on_rank0(logger, f"Session {sid} timed out, closing.")

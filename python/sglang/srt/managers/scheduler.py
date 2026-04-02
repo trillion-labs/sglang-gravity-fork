@@ -1768,7 +1768,10 @@ class Scheduler(
                     self.stream_output([req], req.return_logprob)
                     return
 
-        elif session_id in self.session_controller and not self.session_controller.get(session_id).pending_close:
+        elif (
+            session_id in self.session_controller
+            and not self.session_controller.get(session_id).pending_close
+        ):
             # Session exists and is not pending close: create request from session
             session = self.session_controller.get(session_id)
             req = session.create_req(
