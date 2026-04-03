@@ -78,9 +78,6 @@ def get_is_diffusion_model(model_path: str) -> bool:
     if is_known_non_diffusers_diffusion_model(model_path):
         return True
 
-    if _is_registered_diffusion_model(model_path):
-        return True
-
     try:
         if envs.SGLANG_USE_MODELSCOPE.get():
             from modelscope import model_file_download
@@ -96,7 +93,7 @@ def get_is_diffusion_model(model_path: str) -> bool:
         return _is_diffusers_model_dir(os.path.dirname(file_path))
     except Exception as e:
         logger.debug("Failed to auto-detect diffusion model for %s: %s", model_path, e)
-        return _is_registered_diffusion_model(model_path)
+        return False
 
 
 def get_model_path(extra_argv):
