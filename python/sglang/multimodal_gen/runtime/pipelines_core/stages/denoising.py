@@ -352,15 +352,18 @@ class DenoisingStage(PipelineStage):
 
     @lru_cache(maxsize=8)
     def _build_guidance(self, batch_size, target_dtype, device, guidance_val):
-        """Builds a guidance tensor. This method is cached."""
-        return (
-            torch.full(
-                (batch_size,),
-                guidance_val,
-                dtype=target_dtype,
-                device=device,
-            )
-            * 1000.0
+        """Builds a guidance tensor. This method is cached.
+
+        The guidance value (e.g. 3.5 for FLUX.1-dev, 4.0 for FLUX.2-dev) is
+        passed directly without scaling, matching the HuggingFace Diffusers
+        convention.  The previous ``* 1000`` produced out-of-distribution
+        embeddings in the model's sinusoidal Timesteps layer.
+        """
+        return torch.full(
+            (batch_size,),
+            guidance_val,
+            dtype=target_dtype,
+            device=device,
         )
 
     def get_or_build_guidance(self, bsz: int, dtype, device):
