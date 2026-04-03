@@ -257,6 +257,9 @@ class DiffusionTestCase:
     run_multi_lora_api_check: bool = False
 
     def __post_init__(self) -> None:
+        if os.environ.get("SGLANG_DISABLE_PERF_CHECK", "0") == "1":
+            object.__setattr__(self, "run_perf_check", False)
+
         has_startup_lora = self.server_args.lora_path is not None
         has_dynamic_lora = self.server_args.dynamic_lora_path is not None
         has_second_lora = self.server_args.second_lora_path is not None
