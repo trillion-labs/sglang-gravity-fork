@@ -482,13 +482,13 @@ Consider updating perf_baselines.json with the snippets below:
 --- MISSING GROUND TRUTH DETECTED ---
 GT image(s) not found for '{case.id}'.
 
-Add the expected file(s) to sgl-test-files in diffusion-ci/consistency_gt/ with naming (n=num_gpus).
+Add the expected file(s) to sglang-ci-data in diffusion-ci/consistency_gt/ with naming (n=num_gpus).
   Image: {case.id}_{{n}}gpu.<ext> (ext from output_format: png, jpg, webp)
   Video: {case.id}_{{n}}gpu_frame_0.png, {case.id}_{{n}}gpu_frame_mid.png, {case.id}_{{n}}gpu_frame_last.png
 
 For this case, expected file(s): {names}
 
-Repository: https://github.com/sgl-project/sgl-test-files (path: diffusion-ci/consistency_gt/)
+Repository: https://github.com/sglang-bot/sglang-ci-data (path: diffusion-ci/consistency_gt/)
 
 (Optional) Per-case override in consistency_threshold.json: "cases": {{ "{case.id}": {{ "clip_threshold": 0.92 }} }}
 """)

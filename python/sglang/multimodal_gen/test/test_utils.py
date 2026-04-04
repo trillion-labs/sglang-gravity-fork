@@ -9,7 +9,7 @@ import tempfile
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from urllib.parse import urljoin
 
 import cv2
@@ -24,11 +24,13 @@ from sglang.multimodal_gen.runtime.utils.perf_logger import (
     RequestPerfRecord,
     get_diffusion_perf_log_dir,
 )
-from sglang.multimodal_gen.test.server.testcase_configs import DiffusionTestCase
+
+if TYPE_CHECKING:
+    from sglang.multimodal_gen.test.server.testcase_configs import DiffusionTestCase
 
 logger = init_logger(__name__)
 
-SGL_TEST_FILES_CONSISTENCY_GT_BASE = "https://raw.githubusercontent.com/sgl-project/sgl-test-files/main/diffusion-ci/consistency_gt"
+SGL_TEST_FILES_CONSISTENCY_GT_BASE = "https://raw.githubusercontent.com/sglang-bot/sglang-ci-data/main/diffusion-ci/consistency_gt"
 CONSISTENCY_THRESHOLD_JSON_PATH = (
     Path(__file__).resolve().parent / "server" / "consistency_threshold.json"
 )
@@ -582,7 +584,7 @@ def _load_threshold_json() -> dict[str, Any]:
 
 
 def get_clip_threshold(
-    case: DiffusionTestCase,
+    case: "DiffusionTestCase",
     metadata: dict[str, Any] | None = None,
 ) -> float:
     """Get CLIP similarity threshold for a consistency test case."""
@@ -655,6 +657,10 @@ def compute_clip_embedding(image: np.ndarray) -> np.ndarray:
 
     with torch.no_grad():
         image_features = model.get_image_features(**inputs)
+        if hasattr(image_features, "image_embeds"):
+            image_features = image_features.image_embeds
+        elif hasattr(image_features, "pooler_output"):
+            image_features = image_features.pooler_output
         image_features = image_features / image_features.norm(dim=-1, keepdim=True)
 
     return image_features.cpu().numpy().flatten()
@@ -668,7 +674,7 @@ def compute_clip_similarity(emb1: np.ndarray, emb2: np.ndarray) -> float:
 def output_format_to_ext(output_format: str | None) -> str:
     """Map output_format to file extension. Used by GT naming and consistency check."""
     if not output_format:
-        return "png"
+        return "jpg"
     of = output_format.lower()
     if of == "jpeg":
         return "jpg"
