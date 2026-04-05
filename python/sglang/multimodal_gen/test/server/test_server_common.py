@@ -1023,7 +1023,8 @@ Repository: https://github.com/sglang-bot/sglang-ci-data (path: diffusion-ci/con
         if case.run_t2v_input_reference_check:
             self._test_t2v_rejects_input_reference(diffusion_server, case)
 
-        self._validate_consistency(case, content)
+        if case.run_consistency_check:
+            self._validate_consistency(case, content)
 
         # LoRA API functionality test with E2E validation (only for LoRA-enabled cases)
         if case.run_lora_basic_api_check:
