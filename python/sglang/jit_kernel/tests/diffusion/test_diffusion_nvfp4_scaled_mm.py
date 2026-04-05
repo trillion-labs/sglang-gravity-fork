@@ -12,8 +12,6 @@ from sglang.multimodal_gen.runtime.layers.quantization.modelopt_quant import (
 from sglang.srt.layers.quantization.modelopt_quant import pad_nvfp4_weight
 from sglang.test.ci.ci_register import register_cuda_ci
 
-register_cuda_ci(est_time=15, suite="stage-b-kernel-unit-1-gpu-large")
-register_cuda_ci(est_time=120, suite="nightly-kernel-1-gpu", nightly=True)
 register_cuda_ci(est_time=15, suite="stage-b-test-4-gpu-b200")
 
 DEVICE = "cuda"
