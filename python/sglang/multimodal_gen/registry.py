@@ -75,8 +75,8 @@ from sglang.multimodal_gen.configs.pipeline_configs.wan import (
     Wan2_2_TI2V_5B_Config,
 )
 from sglang.multimodal_gen.configs.sample.flux import (
-    Flux2SamplingParams,
     Flux2KleinSamplingParams,
+    Flux2SamplingParams,
     FluxSamplingParams,
 )
 from sglang.multimodal_gen.configs.sample.glmimage import GlmImageSamplingParams
