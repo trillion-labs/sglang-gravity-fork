@@ -12,6 +12,8 @@ from sglang.multimodal_gen.runtime.layers.quantization.modelopt_quant import (
 from sglang.srt.layers.quantization.modelopt_quant import pad_nvfp4_weight
 from sglang.test.ci.ci_register import register_cuda_ci
 
+register_cuda_ci(est_time=15, suite="stage-b-kernel-unit-1-gpu-large")
+register_cuda_ci(est_time=120, suite="nightly-kernel-1-gpu", nightly=True)
 register_cuda_ci(est_time=15, suite="stage-b-test-4-gpu-b200")
 
 DEVICE = "cuda"
@@ -154,6 +156,14 @@ def _build_layer(
     assert layer.weight_scale_interleaved.shape == expected_scale_shape
     assert layer.weight_scale_interleaved.dtype == torch.float8_e4m3fn
     assert layer.weights_padding_cols == expected_padding_cols
+    torch.testing.assert_close(
+        layer.alpha,
+        (1.0 / (input_global_scale * weight_global_scale)).to(torch.float32),
+    )
+    torch.testing.assert_close(
+        layer.input_scale_inv,
+        input_global_scale.to(torch.float32),
+    )
 
 
 def _resolve_mode(mode: str):
