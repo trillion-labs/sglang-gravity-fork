@@ -119,7 +119,7 @@ jobs:
           cd test/
           python3 run_suite.py --hw cuda --suite stage-b-kernel-benchmark-1-gpu-large
 
-  jit-kernel-b200-diffusion-test:
+  jit-kernel-b200-test:
     if: |
       github.event_name != 'schedule' &&
       inputs.test_parallel_dispatch != 'true' &&
