@@ -13,9 +13,7 @@ CHECKPOINT_GLOBS = (
     "/root/.cache/huggingface/hub/models--Lightricks--LTX-2.3/snapshots/*/"
     "ltx-2.3-22b-dev.safetensors",
 )
-GEMMA_GLOB = (
-    "/root/.cache/sgl_diffusion/materialized_models/Lightricks__LTX-2.3-*"
-)
+GEMMA_GLOB = "/root/.cache/sgl_diffusion/materialized_models/Lightricks__LTX-2.3-*"
 OUTPUT_PATH = Path(
     os.environ.get("LTX23_OUTPUT_PATH", "/tmp/ltx23_official_one_stage_sunset.mp4")
 )
@@ -36,7 +34,9 @@ def resolve_first_existing_path(patterns: tuple[str, ...]) -> Path:
         if len(matches) == 1:
             return matches[0]
         if len(matches) > 1:
-            raise RuntimeError(f"Expected at most one match for {pattern}, got {matches}")
+            raise RuntimeError(
+                f"Expected at most one match for {pattern}, got {matches}"
+            )
     raise RuntimeError(f"Expected one match from {patterns}, got none")
 
 

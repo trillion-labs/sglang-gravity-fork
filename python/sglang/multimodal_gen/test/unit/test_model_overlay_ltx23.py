@@ -23,6 +23,9 @@ from sglang.multimodal_gen.model_overlays.ltx_2_3._overlay.materialize import (
     _resolve_existing_file,
 )
 from sglang.multimodal_gen.registry import get_model_info
+from sglang.multimodal_gen.runtime.models.dits.ltx_2 import (
+    LTX2VideoTransformer3DModel,
+)
 from sglang.multimodal_gen.runtime.pipelines.ltx_2_pipeline import (
     _resolve_ltx2_two_stage_component_paths,
     build_official_ltx2_sigmas,
@@ -35,9 +38,6 @@ from sglang.multimodal_gen.runtime.pipelines_core.stages.decoding_av import (
 from sglang.multimodal_gen.runtime.pipelines_core.stages.denoising_av import (
     LTX2AVDenoisingStage,
     LTX2RefinementStage,
-)
-from sglang.multimodal_gen.runtime.models.dits.ltx_2 import (
-    LTX2VideoTransformer3DModel,
 )
 from sglang.multimodal_gen.runtime.utils.model_overlay import (
     _resolve_bundled_overlay_dir,
@@ -471,7 +471,9 @@ def test_ltx23_stage1_guider_params_are_ignored_during_stage2():
         stage._get_ltx2_stage1_guider_params(req, SimpleNamespace(), "stage1")
         == req.extra["ltx2_stage1_guider_params"]
     )
-    assert stage._get_ltx2_stage1_guider_params(req, SimpleNamespace(), "stage2") is None
+    assert (
+        stage._get_ltx2_stage1_guider_params(req, SimpleNamespace(), "stage2") is None
+    )
 
 
 def test_ltx23_refinement_stage_clears_ti2v_conditioning_and_restores_batch_state(

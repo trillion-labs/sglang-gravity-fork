@@ -50,7 +50,9 @@ def resolve_first_existing_path(patterns: tuple[str, ...]) -> Path:
         if len(matches) == 1:
             return matches[0]
         if len(matches) > 1:
-            raise RuntimeError(f"Expected at most one match for {pattern}, got {matches}")
+            raise RuntimeError(
+                f"Expected at most one match for {pattern}, got {matches}"
+            )
     raise RuntimeError(f"Expected one match from {patterns}, got none")
 
 

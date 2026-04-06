@@ -45,7 +45,9 @@ def resolve_first_existing_path(patterns: tuple[str, ...]) -> Path:
         if len(matches) == 1:
             return matches[0]
         if len(matches) > 1:
-            raise RuntimeError(f"Expected at most one match for {pattern}, got {matches}")
+            raise RuntimeError(
+                f"Expected at most one match for {pattern}, got {matches}"
+            )
     raise RuntimeError(f"Expected one match from {patterns}, got none")
 
 
@@ -134,25 +136,33 @@ def main() -> None:
                     embeddings_processor.video_connector.transformer_1d_blocks[
                         0
                     ].attn1.q_norm.weight,
-                    connectors.video_connector.transformer_blocks[0].attn1.norm_q.weight,
+                    connectors.video_connector.transformer_blocks[
+                        0
+                    ].attn1.norm_q.weight,
                 ),
                 "video_norm_k_weight": tensor_metrics(
                     embeddings_processor.video_connector.transformer_1d_blocks[
                         0
                     ].attn1.k_norm.weight,
-                    connectors.video_connector.transformer_blocks[0].attn1.norm_k.weight,
+                    connectors.video_connector.transformer_blocks[
+                        0
+                    ].attn1.norm_k.weight,
                 ),
                 "audio_norm_q_weight": tensor_metrics(
                     embeddings_processor.audio_connector.transformer_1d_blocks[
                         0
                     ].attn1.q_norm.weight,
-                    connectors.audio_connector.transformer_blocks[0].attn1.norm_q.weight,
+                    connectors.audio_connector.transformer_blocks[
+                        0
+                    ].attn1.norm_q.weight,
                 ),
                 "audio_norm_k_weight": tensor_metrics(
                     embeddings_processor.audio_connector.transformer_1d_blocks[
                         0
                     ].attn1.k_norm.weight,
-                    connectors.audio_connector.transformer_blocks[0].attn1.norm_k.weight,
+                    connectors.audio_connector.transformer_blocks[
+                        0
+                    ].attn1.norm_k.weight,
                 ),
             }
         )
@@ -179,11 +189,17 @@ def main() -> None:
             source_dim = connectors.video_aggregate_embed.out_features
             video_hidden_states = packed_hidden_states
             audio_hidden_states = packed_hidden_states
-            if video_hidden_states.dtype != connectors.video_aggregate_embed.weight.dtype:
+            if (
+                video_hidden_states.dtype
+                != connectors.video_aggregate_embed.weight.dtype
+            ):
                 video_hidden_states = video_hidden_states.to(
                     connectors.video_aggregate_embed.weight.dtype
                 )
-            if audio_hidden_states.dtype != connectors.audio_aggregate_embed.weight.dtype:
+            if (
+                audio_hidden_states.dtype
+                != connectors.audio_aggregate_embed.weight.dtype
+            ):
                 audio_hidden_states = audio_hidden_states.to(
                     connectors.audio_aggregate_embed.weight.dtype
                 )
@@ -202,8 +218,8 @@ def main() -> None:
                 )
             )
             additive_mask = (
-                (1 - attention_mask.to(device=device, dtype=dtype)) * -1000000.0
-            )
+                1 - attention_mask.to(device=device, dtype=dtype)
+            ) * -1000000.0
             ours_video = None
             ours_audio = None
             ours_mask = None
@@ -277,53 +293,54 @@ def main() -> None:
                     rotary_emb=ours_audio_freqs,
                 )
                 official_video_norm1 = rms_norm(official_video_features)
-                ours_video_norm1 = connectors.video_connector.transformer_blocks[0].norm1(
-                    official_video_features
-                )
+                ours_video_norm1 = connectors.video_connector.transformer_blocks[
+                    0
+                ].norm1(official_video_features)
                 official_audio_norm1 = rms_norm(official_audio_features)
-                ours_audio_norm1 = connectors.audio_connector.transformer_blocks[0].norm1(
-                    official_audio_features
-                )
+                ours_audio_norm1 = connectors.audio_connector.transformer_blocks[
+                    0
+                ].norm1(official_audio_features)
 
                 official_video_q = (
-                    embeddings_processor.video_connector.transformer_1d_blocks[0]
-                    .attn1.to_q(official_video_norm1)
+                    embeddings_processor.video_connector.transformer_1d_blocks[
+                        0
+                    ].attn1.to_q(official_video_norm1)
                 )
-                ours_video_q = connectors.video_connector.transformer_blocks[0].attn1.to_q(
-                    ours_video_norm1
-                )
+                ours_video_q = connectors.video_connector.transformer_blocks[
+                    0
+                ].attn1.to_q(ours_video_norm1)
                 official_video_k = (
-                    embeddings_processor.video_connector.transformer_1d_blocks[0]
-                    .attn1.to_k(official_video_norm1)
+                    embeddings_processor.video_connector.transformer_1d_blocks[
+                        0
+                    ].attn1.to_k(official_video_norm1)
                 )
-                ours_video_k = connectors.video_connector.transformer_blocks[0].attn1.to_k(
-                    ours_video_norm1
-                )
+                ours_video_k = connectors.video_connector.transformer_blocks[
+                    0
+                ].attn1.to_k(ours_video_norm1)
                 official_video_v = (
-                    embeddings_processor.video_connector.transformer_1d_blocks[0]
-                    .attn1.to_v(official_video_norm1)
+                    embeddings_processor.video_connector.transformer_1d_blocks[
+                        0
+                    ].attn1.to_v(official_video_norm1)
                 )
-                ours_video_v = connectors.video_connector.transformer_blocks[0].attn1.to_v(
-                    ours_video_norm1
-                )
+                ours_video_v = connectors.video_connector.transformer_blocks[
+                    0
+                ].attn1.to_v(ours_video_norm1)
                 official_video_q_norm = (
-                    embeddings_processor.video_connector.transformer_1d_blocks[0]
-                    .attn1.q_norm(official_video_q)
+                    embeddings_processor.video_connector.transformer_1d_blocks[
+                        0
+                    ].attn1.q_norm(official_video_q)
                 )
-                ours_video_q_norm = (
-                    connectors.video_connector.transformer_blocks[0].attn1.norm_q(
-                        ours_video_q
-                    )
-                )
+                ours_video_q_norm = connectors.video_connector.transformer_blocks[
+                    0
+                ].attn1.norm_q(ours_video_q)
                 official_video_k_norm = (
-                    embeddings_processor.video_connector.transformer_1d_blocks[0]
-                    .attn1.k_norm(official_video_k)
+                    embeddings_processor.video_connector.transformer_1d_blocks[
+                        0
+                    ].attn1.k_norm(official_video_k)
                 )
-                ours_video_k_norm = (
-                    connectors.video_connector.transformer_blocks[0].attn1.norm_k(
-                        ours_video_k
-                    )
-                )
+                ours_video_k_norm = connectors.video_connector.transformer_blocks[
+                    0
+                ].attn1.norm_k(ours_video_k)
                 official_video_q_rope = apply_rotary_emb(
                     official_video_q_norm,
                     official_video_freqs,
@@ -334,82 +351,102 @@ def main() -> None:
                     official_video_freqs,
                     embeddings_processor.video_connector.rope_type,
                 )
-                if connectors.video_connector.transformer_blocks[0].attn1.rope_type == "interleaved":
-                    ours_video_q_rope = connectors.video_connector.transformer_blocks[0].attn1.forward.__globals__[
-                        "apply_interleaved_rotary_emb"
-                    ](ours_video_q_norm, ours_video_freqs)
-                    ours_video_k_rope = connectors.video_connector.transformer_blocks[0].attn1.forward.__globals__[
-                        "apply_interleaved_rotary_emb"
-                    ](ours_video_k_norm, ours_video_freqs)
+                if (
+                    connectors.video_connector.transformer_blocks[0].attn1.rope_type
+                    == "interleaved"
+                ):
+                    ours_video_q_rope = connectors.video_connector.transformer_blocks[
+                        0
+                    ].attn1.forward.__globals__["apply_interleaved_rotary_emb"](
+                        ours_video_q_norm, ours_video_freqs
+                    )
+                    ours_video_k_rope = connectors.video_connector.transformer_blocks[
+                        0
+                    ].attn1.forward.__globals__["apply_interleaved_rotary_emb"](
+                        ours_video_k_norm, ours_video_freqs
+                    )
                 else:
-                    ours_video_q_rope = connectors.video_connector.transformer_blocks[0].attn1.forward.__globals__[
-                        "apply_split_rotary_emb"
-                    ](ours_video_q_norm, ours_video_freqs)
-                    ours_video_k_rope = connectors.video_connector.transformer_blocks[0].attn1.forward.__globals__[
-                        "apply_split_rotary_emb"
-                    ](ours_video_k_norm, ours_video_freqs)
+                    ours_video_q_rope = connectors.video_connector.transformer_blocks[
+                        0
+                    ].attn1.forward.__globals__["apply_split_rotary_emb"](
+                        ours_video_q_norm, ours_video_freqs
+                    )
+                    ours_video_k_rope = connectors.video_connector.transformer_blocks[
+                        0
+                    ].attn1.forward.__globals__["apply_split_rotary_emb"](
+                        ours_video_k_norm, ours_video_freqs
+                    )
                 official_video_attn = (
-                    embeddings_processor.video_connector.transformer_1d_blocks[0]
-                    .attn1(official_video_norm1, mask=additive_mask, pe=official_video_freqs)
+                    embeddings_processor.video_connector.transformer_1d_blocks[0].attn1(
+                        official_video_norm1,
+                        mask=additive_mask,
+                        pe=official_video_freqs,
+                    )
                 )
-                ours_video_attn = connectors.video_connector.transformer_blocks[0].attn1(
+                ours_video_attn = connectors.video_connector.transformer_blocks[
+                    0
+                ].attn1(
                     ours_video_norm1,
                     attention_mask=additive_mask,
                     query_rotary_emb=ours_video_freqs,
                 )
-                official_video_after_attn = official_video_attn + official_video_features
+                official_video_after_attn = (
+                    official_video_attn + official_video_features
+                )
                 ours_video_after_attn = ours_video_attn + official_video_features
                 official_video_norm2 = rms_norm(official_video_after_attn)
-                ours_video_norm2 = connectors.video_connector.transformer_blocks[0].norm2(
-                    ours_video_after_attn
-                )
+                ours_video_norm2 = connectors.video_connector.transformer_blocks[
+                    0
+                ].norm2(ours_video_after_attn)
                 official_video_ff = (
-                    embeddings_processor.video_connector.transformer_1d_blocks[0]
-                    .ff(official_video_norm2)
+                    embeddings_processor.video_connector.transformer_1d_blocks[0].ff(
+                        official_video_norm2
+                    )
                 )
                 ours_video_ff = connectors.video_connector.transformer_blocks[0].ff(
                     ours_video_norm2
                 )
 
                 official_audio_q = (
-                    embeddings_processor.audio_connector.transformer_1d_blocks[0]
-                    .attn1.to_q(official_audio_norm1)
+                    embeddings_processor.audio_connector.transformer_1d_blocks[
+                        0
+                    ].attn1.to_q(official_audio_norm1)
                 )
-                ours_audio_q = connectors.audio_connector.transformer_blocks[0].attn1.to_q(
-                    ours_audio_norm1
-                )
+                ours_audio_q = connectors.audio_connector.transformer_blocks[
+                    0
+                ].attn1.to_q(ours_audio_norm1)
                 official_audio_k = (
-                    embeddings_processor.audio_connector.transformer_1d_blocks[0]
-                    .attn1.to_k(official_audio_norm1)
+                    embeddings_processor.audio_connector.transformer_1d_blocks[
+                        0
+                    ].attn1.to_k(official_audio_norm1)
                 )
-                ours_audio_k = connectors.audio_connector.transformer_blocks[0].attn1.to_k(
-                    ours_audio_norm1
-                )
+                ours_audio_k = connectors.audio_connector.transformer_blocks[
+                    0
+                ].attn1.to_k(ours_audio_norm1)
                 official_audio_v = (
-                    embeddings_processor.audio_connector.transformer_1d_blocks[0]
-                    .attn1.to_v(official_audio_norm1)
+                    embeddings_processor.audio_connector.transformer_1d_blocks[
+                        0
+                    ].attn1.to_v(official_audio_norm1)
                 )
-                ours_audio_v = connectors.audio_connector.transformer_blocks[0].attn1.to_v(
-                    ours_audio_norm1
-                )
+                ours_audio_v = connectors.audio_connector.transformer_blocks[
+                    0
+                ].attn1.to_v(ours_audio_norm1)
                 official_audio_q_norm = (
-                    embeddings_processor.audio_connector.transformer_1d_blocks[0]
-                    .attn1.q_norm(official_audio_q)
+                    embeddings_processor.audio_connector.transformer_1d_blocks[
+                        0
+                    ].attn1.q_norm(official_audio_q)
                 )
-                ours_audio_q_norm = (
-                    connectors.audio_connector.transformer_blocks[0].attn1.norm_q(
-                        ours_audio_q
-                    )
-                )
+                ours_audio_q_norm = connectors.audio_connector.transformer_blocks[
+                    0
+                ].attn1.norm_q(ours_audio_q)
                 official_audio_k_norm = (
-                    embeddings_processor.audio_connector.transformer_1d_blocks[0]
-                    .attn1.k_norm(official_audio_k)
+                    embeddings_processor.audio_connector.transformer_1d_blocks[
+                        0
+                    ].attn1.k_norm(official_audio_k)
                 )
-                ours_audio_k_norm = (
-                    connectors.audio_connector.transformer_blocks[0].attn1.norm_k(
-                        ours_audio_k
-                    )
-                )
+                ours_audio_k_norm = connectors.audio_connector.transformer_blocks[
+                    0
+                ].attn1.norm_k(ours_audio_k)
                 official_audio_q_rope = apply_rotary_emb(
                     official_audio_q_norm,
                     official_audio_freqs,
@@ -420,38 +457,57 @@ def main() -> None:
                     official_audio_freqs,
                     embeddings_processor.audio_connector.rope_type,
                 )
-                if connectors.audio_connector.transformer_blocks[0].attn1.rope_type == "interleaved":
-                    ours_audio_q_rope = connectors.audio_connector.transformer_blocks[0].attn1.forward.__globals__[
-                        "apply_interleaved_rotary_emb"
-                    ](ours_audio_q_norm, ours_audio_freqs)
-                    ours_audio_k_rope = connectors.audio_connector.transformer_blocks[0].attn1.forward.__globals__[
-                        "apply_interleaved_rotary_emb"
-                    ](ours_audio_k_norm, ours_audio_freqs)
+                if (
+                    connectors.audio_connector.transformer_blocks[0].attn1.rope_type
+                    == "interleaved"
+                ):
+                    ours_audio_q_rope = connectors.audio_connector.transformer_blocks[
+                        0
+                    ].attn1.forward.__globals__["apply_interleaved_rotary_emb"](
+                        ours_audio_q_norm, ours_audio_freqs
+                    )
+                    ours_audio_k_rope = connectors.audio_connector.transformer_blocks[
+                        0
+                    ].attn1.forward.__globals__["apply_interleaved_rotary_emb"](
+                        ours_audio_k_norm, ours_audio_freqs
+                    )
                 else:
-                    ours_audio_q_rope = connectors.audio_connector.transformer_blocks[0].attn1.forward.__globals__[
-                        "apply_split_rotary_emb"
-                    ](ours_audio_q_norm, ours_audio_freqs)
-                    ours_audio_k_rope = connectors.audio_connector.transformer_blocks[0].attn1.forward.__globals__[
-                        "apply_split_rotary_emb"
-                    ](ours_audio_k_norm, ours_audio_freqs)
+                    ours_audio_q_rope = connectors.audio_connector.transformer_blocks[
+                        0
+                    ].attn1.forward.__globals__["apply_split_rotary_emb"](
+                        ours_audio_q_norm, ours_audio_freqs
+                    )
+                    ours_audio_k_rope = connectors.audio_connector.transformer_blocks[
+                        0
+                    ].attn1.forward.__globals__["apply_split_rotary_emb"](
+                        ours_audio_k_norm, ours_audio_freqs
+                    )
                 official_audio_attn = (
-                    embeddings_processor.audio_connector.transformer_1d_blocks[0]
-                    .attn1(official_audio_norm1, mask=additive_mask, pe=official_audio_freqs)
+                    embeddings_processor.audio_connector.transformer_1d_blocks[0].attn1(
+                        official_audio_norm1,
+                        mask=additive_mask,
+                        pe=official_audio_freqs,
+                    )
                 )
-                ours_audio_attn = connectors.audio_connector.transformer_blocks[0].attn1(
+                ours_audio_attn = connectors.audio_connector.transformer_blocks[
+                    0
+                ].attn1(
                     ours_audio_norm1,
                     attention_mask=additive_mask,
                     query_rotary_emb=ours_audio_freqs,
                 )
-                official_audio_after_attn = official_audio_attn + official_audio_features
+                official_audio_after_attn = (
+                    official_audio_attn + official_audio_features
+                )
                 ours_audio_after_attn = ours_audio_attn + official_audio_features
                 official_audio_norm2 = rms_norm(official_audio_after_attn)
-                ours_audio_norm2 = connectors.audio_connector.transformer_blocks[0].norm2(
-                    ours_audio_after_attn
-                )
+                ours_audio_norm2 = connectors.audio_connector.transformer_blocks[
+                    0
+                ].norm2(ours_audio_after_attn)
                 official_audio_ff = (
-                    embeddings_processor.audio_connector.transformer_1d_blocks[0]
-                    .ff(official_audio_norm2)
+                    embeddings_processor.audio_connector.transformer_1d_blocks[0].ff(
+                        official_audio_norm2
+                    )
                 )
                 ours_audio_ff = connectors.audio_connector.transformer_blocks[0].ff(
                     ours_audio_norm2
@@ -527,7 +583,12 @@ def main() -> None:
                     official_audio_block0, ours_audio_block0
                 ),
             }
-            if official_output is not None and ours_video is not None and ours_audio is not None and ours_mask is not None:
+            if (
+                official_output is not None
+                and ours_video is not None
+                and ours_audio is not None
+                and ours_mask is not None
+            ):
                 payload["results"][key]["video_encoding"] = tensor_metrics(
                     official_output.video_encoding, ours_video
                 )

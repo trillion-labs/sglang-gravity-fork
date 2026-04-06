@@ -1258,7 +1258,9 @@ class LTX2RefinementStage(LTX2AVDenoisingStage):
                 audio_noise * audio_noise_scale
                 + batch.audio_latents * (1 - audio_noise_scale)
             )
-        if not is_ltx23_native_variant(server_args.pipeline_config.vae_config.arch_config):
+        if not is_ltx23_native_variant(
+            server_args.pipeline_config.vae_config.arch_config
+        ):
             batch.latents = batch.latents.to(
                 device=batch.latents.device, dtype=torch.float32
             )

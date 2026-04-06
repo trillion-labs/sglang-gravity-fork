@@ -269,7 +269,9 @@ def materialize(
         os.path.join(output_dir, "vocoder"),
     )
 
-    source_checkpoint = _resolve_existing_file(source_dir, LTX23_DEV_CHECKPOINT_FILENAMES)
+    source_checkpoint = _resolve_existing_file(
+        source_dir, LTX23_DEV_CHECKPOINT_FILENAMES
+    )
 
     transformer_dir = os.path.join(output_dir, "transformer")
     _ensure_dir(transformer_dir)
