@@ -622,14 +622,25 @@ class LTX2AVDenoisingStage(DenoisingStage):
                         video_coords = None
                         audio_coords = None
 
-                        timestep = t_device.expand(int(latent_model_input.shape[0]))
+                        batch_size = int(latent_model_input.shape[0])
+                        video_num_tokens = int(latent_model_input.shape[1])
+                        timestep = t_device.expand(batch_size)
                         if do_ti2v and denoise_mask is not None:
                             timestep_video = timestep.unsqueeze(
                                 -1
                             ) * denoise_mask.squeeze(-1)
                         else:
-                            timestep_video = timestep
-                        timestep_audio = timestep
+                            timestep_video = timestep.view(batch_size, 1).expand(
+                                batch_size, video_num_tokens
+                            )
+
+                        if audio_latent_model_input.ndim == 3:
+                            audio_num_tokens = int(audio_latent_model_input.shape[1])
+                            timestep_audio = timestep.view(batch_size, 1).expand(
+                                batch_size, audio_num_tokens
+                            )
+                        else:
+                            timestep_audio = timestep
 
                         use_official_cfg_path = stage1_guider_params is None
                         if use_official_cfg_path:
