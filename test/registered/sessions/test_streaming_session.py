@@ -17,6 +17,7 @@ from typing import Any, Optional
 import aiohttp
 import requests
 
+from sglang.srt.environ import envs
 from sglang.srt.utils import kill_process_tree
 from sglang.srt.utils.hf_transformers_utils import get_tokenizer
 from sglang.test.ci.ci_register import register_cuda_ci
@@ -397,6 +398,170 @@ class TestStreamingSession(CustomTestCase):
             "Server unhealthy after streaming session close — "
             "likely a token memory leak from streaming session lifecycle.",
         )
+
+
+# ===================================================================
+# Variant: mixed chunked prefill
+# ===================================================================
+
+
+class TestStreamingSessionMixedChunk(TestStreamingSession):
+    """Streaming session with --enable-mixed-chunk."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.model = DEFAULT_SMALL_MODEL_NAME_FOR_TEST
+        cls.base_url = DEFAULT_URL_FOR_TEST
+        cls.process = popen_launch_server(
+            cls.model,
+            cls.base_url,
+            timeout=DEFAULT_TIMEOUT_FOR_SERVER_LAUNCH,
+            other_args=[
+                "--enable-streaming-session",
+                "--chunked-prefill-size",
+                "512",
+                "--enable-mixed-chunk",
+            ],
+        )
+        cls.tokenizer = get_tokenizer(cls.model)
+
+    @classmethod
+    def tearDownClass(cls):
+        kill_process_tree(cls.process.pid)
+
+
+# ===================================================================
+# Variant: no radix cache
+# ===================================================================
+
+
+class TestStreamingSessionNoRadixCache(TestStreamingSession):
+    """Streaming session with --disable-radix-cache."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.model = DEFAULT_SMALL_MODEL_NAME_FOR_TEST
+        cls.base_url = DEFAULT_URL_FOR_TEST
+        cls.process = popen_launch_server(
+            cls.model,
+            cls.base_url,
+            timeout=DEFAULT_TIMEOUT_FOR_SERVER_LAUNCH,
+            other_args=[
+                "--enable-streaming-session",
+                "--chunked-prefill-size",
+                "512",
+                "--disable-radix-cache",
+            ],
+        )
+        cls.tokenizer = get_tokenizer(cls.model)
+
+    @classmethod
+    def tearDownClass(cls):
+        kill_process_tree(cls.process.pid)
+
+    @unittest.skip("radix cache disabled — cache insertion assertions not applicable")
+    def test_kv_cache_inheritance(self, gen_len=12):
+        pass
+
+
+# ===================================================================
+# Variant: mixed chunked prefill + no radix cache
+# ===================================================================
+
+
+class TestStreamingSessionMixedChunkNoRadixCache(TestStreamingSession):
+    """Streaming session with --enable-mixed-chunk --disable-radix-cache."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.model = DEFAULT_SMALL_MODEL_NAME_FOR_TEST
+        cls.base_url = DEFAULT_URL_FOR_TEST
+        cls.process = popen_launch_server(
+            cls.model,
+            cls.base_url,
+            timeout=DEFAULT_TIMEOUT_FOR_SERVER_LAUNCH,
+            other_args=[
+                "--enable-streaming-session",
+                "--chunked-prefill-size",
+                "512",
+                "--enable-mixed-chunk",
+                "--disable-radix-cache",
+            ],
+        )
+        cls.tokenizer = get_tokenizer(cls.model)
+
+    @classmethod
+    def tearDownClass(cls):
+        kill_process_tree(cls.process.pid)
+
+    @unittest.skip("radix cache disabled — cache insertion assertions not applicable")
+    def test_kv_cache_inheritance(self, gen_len=12):
+        pass
+
+
+# ===================================================================
+# Variant: retract decode
+# ===================================================================
+
+
+class TestStreamingSessionRetract(TestStreamingSession):
+    """Streaming session under retract decode pressure."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.model = DEFAULT_SMALL_MODEL_NAME_FOR_TEST
+        cls.base_url = DEFAULT_URL_FOR_TEST
+        with envs.SGLANG_TEST_RETRACT.override(
+            True
+        ), envs.SGLANG_ENABLE_STRICT_MEM_CHECK_DURING_BUSY.override(1):
+            cls.process = popen_launch_server(
+                cls.model,
+                cls.base_url,
+                timeout=DEFAULT_TIMEOUT_FOR_SERVER_LAUNCH,
+                other_args=[
+                    "--enable-streaming-session",
+                    "--chunked-prefill-size",
+                    "128",
+                ],
+            )
+        cls.tokenizer = get_tokenizer(cls.model)
+
+    @classmethod
+    def tearDownClass(cls):
+        kill_process_tree(cls.process.pid)
+
+
+# ===================================================================
+# Variant: retract decode + mixed chunked prefill
+# ===================================================================
+
+
+class TestStreamingSessionRetractMixedChunk(TestStreamingSession):
+    """Streaming session under retract decode with --enable-mixed-chunk."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.model = DEFAULT_SMALL_MODEL_NAME_FOR_TEST
+        cls.base_url = DEFAULT_URL_FOR_TEST
+        with envs.SGLANG_TEST_RETRACT.override(
+            True
+        ), envs.SGLANG_ENABLE_STRICT_MEM_CHECK_DURING_BUSY.override(1):
+            cls.process = popen_launch_server(
+                cls.model,
+                cls.base_url,
+                timeout=DEFAULT_TIMEOUT_FOR_SERVER_LAUNCH,
+                other_args=[
+                    "--enable-streaming-session",
+                    "--chunked-prefill-size",
+                    "128",
+                    "--enable-mixed-chunk",
+                ],
+            )
+        cls.tokenizer = get_tokenizer(cls.model)
+
+    @classmethod
+    def tearDownClass(cls):
+        kill_process_tree(cls.process.pid)
 
 
 if __name__ == "__main__":
