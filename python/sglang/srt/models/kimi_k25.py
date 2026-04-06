@@ -685,6 +685,10 @@ class KimiK25ForConditionalGeneration(nn.Module):
         }
     )
 
+    packed_modules_mapping = {
+        "fused_qkv_a_proj_with_mqa": ["q_a_proj", "kv_a_proj_with_mqa"],
+    }
+
     def __init__(
         self,
         config: KimiK25Config,
