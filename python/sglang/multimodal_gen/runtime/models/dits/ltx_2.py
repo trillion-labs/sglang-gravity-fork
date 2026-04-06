@@ -1433,6 +1433,8 @@ class LTX2VideoTransformer3DModel(CachableDiT, OffloadableDiTMixin):
         audio_encoder_hidden_states: torch.Tensor,
         timestep: torch.LongTensor,
         audio_timestep: Optional[torch.LongTensor] = None,
+        prompt_timestep: Optional[torch.Tensor] = None,
+        audio_prompt_timestep: Optional[torch.Tensor] = None,
         encoder_attention_mask: Optional[torch.Tensor] = None,
         audio_encoder_attention_mask: Optional[torch.Tensor] = None,
         num_frames: Optional[int] = None,
@@ -1530,13 +1532,21 @@ class LTX2VideoTransformer3DModel(CachableDiT, OffloadableDiTMixin):
         temb_prompt = None
         temb_audio_prompt = None
         if self.prompt_adaln_single is not None:
-            prompt_timestep = self._collapse_prompt_timestep(timestep)
+            prompt_timestep = (
+                self._collapse_prompt_timestep(timestep)
+                if prompt_timestep is None
+                else prompt_timestep
+            )
             temb_prompt, _ = self.prompt_adaln_single(
                 prompt_timestep.flatten(), hidden_dtype=hidden_states.dtype
             )
             temb_prompt = temb_prompt.view(batch_size, -1, temb_prompt.size(-1))
         if self.audio_prompt_adaln_single is not None:
-            audio_prompt_timestep = self._collapse_prompt_timestep(audio_timestep)
+            audio_prompt_timestep = (
+                self._collapse_prompt_timestep(audio_timestep)
+                if audio_prompt_timestep is None
+                else audio_prompt_timestep
+            )
             temb_audio_prompt, _ = self.audio_prompt_adaln_single(
                 audio_prompt_timestep.flatten(),
                 hidden_dtype=audio_hidden_states.dtype,

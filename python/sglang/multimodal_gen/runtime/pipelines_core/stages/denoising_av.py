@@ -641,6 +641,22 @@ class LTX2AVDenoisingStage(DenoisingStage):
                             )
                         else:
                             timestep_audio = timestep
+                        timestep_scale_multiplier = float(
+                            getattr(current_model, "timestep_scale_multiplier", 1000)
+                        )
+                        prompt_timestep_video = (
+                            sigma.to(
+                                device=latent_model_input.device, dtype=torch.float32
+                            )
+                            * timestep_scale_multiplier
+                        ).expand(batch_size)
+                        prompt_timestep_audio = (
+                            sigma.to(
+                                device=audio_latent_model_input.device,
+                                dtype=torch.float32,
+                            )
+                            * timestep_scale_multiplier
+                        ).expand(batch_size)
 
                         use_official_cfg_path = stage1_guider_params is None
                         if use_official_cfg_path:
@@ -682,6 +698,12 @@ class LTX2AVDenoisingStage(DenoisingStage):
                                 timestep_audio = self._repeat_batch_dim(
                                     timestep_audio, cfg_batch_size
                                 )
+                                prompt_timestep_video = self._repeat_batch_dim(
+                                    prompt_timestep_video, cfg_batch_size
+                                )
+                                prompt_timestep_audio = self._repeat_batch_dim(
+                                    prompt_timestep_audio, cfg_batch_size
+                                )
 
                             with set_forward_context(
                                 current_timestep=i, attn_metadata=attn_metadata
@@ -693,6 +715,8 @@ class LTX2AVDenoisingStage(DenoisingStage):
                                     audio_encoder_hidden_states=audio_encoder_hidden_states,
                                     timestep=timestep_video,
                                     audio_timestep=timestep_audio,
+                                    prompt_timestep=prompt_timestep_video,
+                                    audio_prompt_timestep=prompt_timestep_audio,
                                     encoder_attention_mask=encoder_attention_mask,
                                     audio_encoder_attention_mask=encoder_attention_mask,
                                     num_frames=latent_num_frames,
@@ -770,6 +794,8 @@ class LTX2AVDenoisingStage(DenoisingStage):
                                     audio_encoder_hidden_states=audio_encoder_hidden_states,
                                     timestep=timestep_video,
                                     audio_timestep=timestep_audio,
+                                    prompt_timestep=prompt_timestep_video,
+                                    audio_prompt_timestep=prompt_timestep_audio,
                                     encoder_attention_mask=encoder_attention_mask,
                                     audio_encoder_attention_mask=encoder_attention_mask,
                                     num_frames=latent_num_frames,
@@ -804,6 +830,8 @@ class LTX2AVDenoisingStage(DenoisingStage):
                                         audio_encoder_hidden_states=neg_audio_encoder_hidden_states,
                                         timestep=timestep_video,
                                         audio_timestep=timestep_audio,
+                                        prompt_timestep=prompt_timestep_video,
+                                        audio_prompt_timestep=prompt_timestep_audio,
                                         encoder_attention_mask=neg_encoder_attention_mask,
                                         audio_encoder_attention_mask=neg_encoder_attention_mask,
                                         num_frames=latent_num_frames,
@@ -885,6 +913,8 @@ class LTX2AVDenoisingStage(DenoisingStage):
                                         audio_encoder_hidden_states=audio_encoder_hidden_states,
                                         timestep=timestep_video,
                                         audio_timestep=timestep_audio,
+                                        prompt_timestep=prompt_timestep_video,
+                                        audio_prompt_timestep=prompt_timestep_audio,
                                         encoder_attention_mask=encoder_attention_mask,
                                         audio_encoder_attention_mask=encoder_attention_mask,
                                         num_frames=latent_num_frames,
@@ -927,6 +957,8 @@ class LTX2AVDenoisingStage(DenoisingStage):
                                         audio_encoder_hidden_states=audio_encoder_hidden_states,
                                         timestep=timestep_video,
                                         audio_timestep=timestep_audio,
+                                        prompt_timestep=prompt_timestep_video,
+                                        audio_prompt_timestep=prompt_timestep_audio,
                                         encoder_attention_mask=encoder_attention_mask,
                                         audio_encoder_attention_mask=encoder_attention_mask,
                                         num_frames=latent_num_frames,
