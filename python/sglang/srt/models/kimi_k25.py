@@ -711,9 +711,7 @@ class KimiK25ForConditionalGeneration(nn.Module):
         self.language_model = DeepseekV3ForCausalLM(
             config.text_config,
             quant_config,
-            prefix=(
-                "language_model" if isinstance(quant_config, ModelSlimConfig) else ""
-            ),
+            prefix="language_model",
         )
 
         self.model = self.language_model.model
