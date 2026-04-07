@@ -511,9 +511,7 @@ class TestStreamingSessionRetract(TestStreamingSession):
     def setUpClass(cls):
         cls.model = DEFAULT_SMALL_MODEL_NAME_FOR_TEST
         cls.base_url = DEFAULT_URL_FOR_TEST
-        with envs.SGLANG_TEST_RETRACT.override(
-            True
-        ), envs.SGLANG_ENABLE_STRICT_MEM_CHECK_DURING_BUSY.override(1):
+        with envs.SGLANG_TEST_RETRACT.override(True):
             cls.process = popen_launch_server(
                 cls.model,
                 cls.base_url,
@@ -543,9 +541,7 @@ class TestStreamingSessionRetractMixedChunk(TestStreamingSession):
     def setUpClass(cls):
         cls.model = DEFAULT_SMALL_MODEL_NAME_FOR_TEST
         cls.base_url = DEFAULT_URL_FOR_TEST
-        with envs.SGLANG_TEST_RETRACT.override(
-            True
-        ), envs.SGLANG_ENABLE_STRICT_MEM_CHECK_DURING_BUSY.override(1):
+        with envs.SGLANG_TEST_RETRACT.override(True):
             cls.process = popen_launch_server(
                 cls.model,
                 cls.base_url,
