@@ -193,6 +193,12 @@ class SchedulerRuntimeCheckerMixin:
     def _get_batch_uncached_size(self: Scheduler, batch: ScheduleBatch) -> int:
         ret = 0
         for req in batch.reqs:
+            # In overlap mode, a finished streaming-session req may still be in
+            # the batch while its KV has already been transferred to a SessionSlot
+            # (req_pool_idx set to None by cache_finished_req). Skip it to avoid
+            # double-counting with session_held_tokens().
+            if req.req_pool_idx is None:
+                continue
             assert req.kv_committed_freed == req.kv_overallocated_freed
             uncached_len = 0
             if not req.kv_committed_freed:
