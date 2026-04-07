@@ -804,7 +804,6 @@ ONE_GPU_CASES_C = [
             modality="image",
         ),
         T2I_sampling_params,
-        run_consistency_check=False,
     )
 ]
 
@@ -945,7 +944,6 @@ TWO_GPU_CASES_A = [
             extras=["--pipeline-class-name LTX2TwoStagePipeline"],
         ),
         T2V_sampling_params,
-        run_consistency_check=False,
     ),
 ]
 
