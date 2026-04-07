@@ -476,12 +476,27 @@ def release_kv_cache(req: Req, tree_cache: BasePrefixCache, is_insert: bool = Tr
             req.mamba_pool_idx = None
         return
 
+    # Streaming sessions transfer req_pool ownership into SessionSlot objects.
+    # Trim any speculative tail before that transfer, otherwise later turns
+    # restore only the committed prefix and can strand unreachable KV pages.
+    if isinstance(tree_cache, SessionAwareCache) and getattr(req, "session", None) is not None:
+        start_p, end_p = req.pop_overallocated_kv_cache()
+        page_size = get_global_server_args().page_size
+        if page_size > 1:
+            start_p = ceil_align(start_p, page_size)
+        if start_p < end_p:
+            indices_to_free = tree_cache.req_to_token_pool.req_to_token[
+                req.req_pool_idx
+            ][start_p:end_p]
+            tree_cache.token_to_kv_pool_allocator.free(indices_to_free)
+        req.kv_allocated_len = req.kv_committed_len
+
     tree_cache.cache_finished_req(req, is_insert=is_insert)
 
-    # FIXME: SessionAwareCache.cache_finished_req sets req_pool_idx = None to
-    # transfer KV ownership to the SessionSlot, so we skip the remaining
-    # cleanup (overalloc free + pool slot free). This means over-allocated
-    # tokens from speculative decoding are NOT freed between turns.
+    # SessionAwareCache.cache_finished_req sets req_pool_idx = None to transfer
+    # KV ownership to the SessionSlot, so the remaining cleanup is skipped.
+    # Streaming-session specific overalloc trimming must therefore happen
+    # before cache_finished_req above.
     if req.req_pool_idx is None:
         return
 
