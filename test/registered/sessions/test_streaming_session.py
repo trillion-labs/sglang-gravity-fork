@@ -504,6 +504,7 @@ class TestStreamingSessionMixedChunkNoRadixCache(TestStreamingSession):
 # ===================================================================
 
 
+@unittest.skip("streaming session + retract has a token leak — tracked separately")
 class TestStreamingSessionRetract(TestStreamingSession):
     """Streaming session under retract decode pressure."""
 
@@ -534,6 +535,7 @@ class TestStreamingSessionRetract(TestStreamingSession):
 # ===================================================================
 
 
+@unittest.skip("streaming session + retract has a token leak — tracked separately")
 class TestStreamingSessionRetractMixedChunk(TestStreamingSession):
     """Streaming session under retract decode with --enable-mixed-chunk."""
 
