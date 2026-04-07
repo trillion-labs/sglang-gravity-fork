@@ -59,6 +59,7 @@ def is_deepseek_nsa(config: PretrainedConfig) -> bool:
             "DeepseekV3ForCausalLM",
             "DeepseekV32ForCausalLM",
             "DeepseekV3ForCausalLMNextN",
+            "GravityMoEForCausalLM",
             "MistralLarge3ForCausalLM",
             "PixtralForConditionalGeneration",
             "GlmMoeDsaForCausalLM",
@@ -274,6 +275,7 @@ class ModelConfig:
 
         if is_draft_model and self.hf_config.architectures[0] in [
             "DeepseekV3ForCausalLM",
+            "GravityMoEForCausalLM",
             "GlmMoeDsaForCausalLM",
         ]:
             self.hf_config.architectures[0] = "DeepseekV3ForCausalLMNextN"
@@ -419,6 +421,7 @@ class ModelConfig:
             or "DeepseekV32ForCausalLM" in self.hf_config.architectures
             or "DeepseekV3ForCausalLM" in self.hf_config.architectures
             or "DeepseekV3ForCausalLMNextN" in self.hf_config.architectures
+            or "GravityMoEForCausalLM" in self.hf_config.architectures
             or "Glm4MoeLiteForCausalLM" in self.hf_config.architectures
             or "GlmMoeDsaForCausalLM" in self.hf_config.architectures
             or "LongcatFlashForCausalLM" in self.hf_config.architectures

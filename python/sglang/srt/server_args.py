@@ -1196,6 +1196,7 @@ class ServerArgs:
 
         if model_arch in [
             "DeepseekV3ForCausalLM",
+            "GravityMoEForCausalLM",
             "KimiK25ForConditionalGeneration",
             "MistralLarge3ForCausalLM",
             "PixtralForConditionalGeneration",
@@ -1292,7 +1293,7 @@ class ServerArgs:
                     # Default DeepSeek V3/R1 native FP8 when not explicitly set,
                     # Because we need this condition for an assertion in
                     # flashinfer_trtllm MoE runner backend.
-                    if quant_method is None and model_arch in ["DeepseekV3ForCausalLM"]:
+                    if quant_method is None and model_arch in ["DeepseekV3ForCausalLM", "GravityMoEForCausalLM"]:
                         self.quantization = "fp8"
                         logger.info(
                             "Quantization not specified, default to fp8 for DeepSeek on sm100"
@@ -1682,6 +1683,7 @@ class ServerArgs:
             and model_arch
             in [
                 "DeepseekV3ForCausalLM",
+                "GravityMoEForCausalLM",
                 "GptOssForCausalLM",
                 "Glm4MoeForCausalLM",
                 "Glm4MoeLiteForCausalLM",
@@ -2398,6 +2400,7 @@ class ServerArgs:
             if model_arch in [
                 "DeepseekV32ForCausalLM",
                 "DeepseekV3ForCausalLM",
+                "GravityMoEForCausalLM",
                 "Glm4MoeForCausalLM",
                 "Glm4MoeLiteForCausalLM",
                 "GlmMoeDsaForCausalLM",
@@ -2730,6 +2733,7 @@ class ServerArgs:
                         "DeepseekV2ForCausalLM",
                         "DeepseekV3ForCausalLM",
                         "DeepseekV32ForCausalLM",
+                        "GravityMoEForCausalLM",
                         "MistralLarge3ForCausalLM",
                         "PixtralForConditionalGeneration",
                         "GlmMoeDsaForCausalLM",
@@ -5756,6 +5760,7 @@ def auto_choose_speculative_params(self: ServerArgs):
         "DeepseekV32ForCausalLM",
         "DeepseekV3ForCausalLM",
         "DeepseekV2ForCausalLM",
+        "GravityMoEForCausalLM",
         "GptOssForCausalLM",
         "Glm4MoeForCausalLM",
         "Glm4MoeLiteForCausalLM",
