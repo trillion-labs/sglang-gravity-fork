@@ -38,6 +38,7 @@ _LPLB_SUPPORTED_MODEL_ARCHS: frozenset[str] = frozenset(
     {
         "DeepseekV2ForCausalLM",
         "DeepseekV3ForCausalLM",
+        "GravityMoEForCausalLM",
         "DeepseekV32ForCausalLM",
         "MistralLarge3ForCausalLM",
         "MistralLarge3ForCausalLMEagle",

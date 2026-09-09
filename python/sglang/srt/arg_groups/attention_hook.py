@@ -561,6 +561,7 @@ def handle_deterministic_inference(server_args: Any):
                 is_deepseek_model = model_arch in [
                     "DeepseekV2ForCausalLM",
                     "DeepseekV3ForCausalLM",
+                    "GravityMoEForCausalLM",
                     "DeepseekV32ForCausalLM",
                     "MistralLarge3ForCausalLM",
                     "PixtralForConditionalGeneration",

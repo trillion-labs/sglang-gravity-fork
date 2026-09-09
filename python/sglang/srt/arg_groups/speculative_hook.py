@@ -688,6 +688,7 @@ def _handle_eagle_family(server_args: ServerArgs) -> None:
     if model_arch in [
         "DeepseekV32ForCausalLM",
         "DeepseekV3ForCausalLM",
+        "GravityMoEForCausalLM",
         "DeepseekV4ForCausalLM",
         "Glm4MoeForCausalLM",
         "Glm4MoeLiteForCausalLM",
@@ -977,6 +978,7 @@ def _auto_choose_speculative_params(server_args: ServerArgs, model_arch: str) ->
     elif model_arch in [
         "DeepseekV32ForCausalLM",
         "DeepseekV3ForCausalLM",
+        "GravityMoEForCausalLM",
         "DeepseekV2ForCausalLM",
         "GptOssForCausalLM",
         "Glm4MoeForCausalLM",

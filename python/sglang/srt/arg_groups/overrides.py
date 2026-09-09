@@ -757,6 +757,7 @@ def _dsa_split_backend_resolution(view: Any) -> dict:
 _DEEPSEEK_FAMILY_ARCHS = frozenset(
     {
         "DeepseekV3ForCausalLM",
+        "GravityMoEForCausalLM",
         "DeepseekV32ForCausalLM",
         "KimiK25ForConditionalGeneration",
         "MistralLarge3ForCausalLM",
@@ -944,6 +945,7 @@ def _sparse_head_overlap_disable(view: Any) -> dict:
 _FLASHINFER_ALLREDUCE_FUSION_ARCHS = frozenset(
     {
         "DeepseekV3ForCausalLM",
+        "GravityMoEForCausalLM",
         "DeepseekV32ForCausalLM",
         "DeepseekV4ForCausalLM",
         "GptOssForCausalLM",
@@ -1050,6 +1052,7 @@ def _deterministic_is_deepseek_model(view: Any) -> bool:
         return hf_config.architectures[0] in [
             "DeepseekV2ForCausalLM",
             "DeepseekV3ForCausalLM",
+            "GravityMoEForCausalLM",
             "DeepseekV32ForCausalLM",
             "MistralLarge3ForCausalLM",
             "PixtralForConditionalGeneration",

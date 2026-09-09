@@ -124,6 +124,7 @@ def is_deepseek_dsa(config) -> bool:
         _hf_arch(config)
         in (
             "DeepseekV3ForCausalLM",
+            "GravityMoEForCausalLM",
             "DeepseekV32ForCausalLM",
             "DeepseekV3ForCausalLMNextN",
             "MistralLarge3ForCausalLM",
@@ -660,6 +661,7 @@ class ModelConfig:
 
         if is_draft_model and self.hf_config.architectures[0] in [
             "DeepseekV3ForCausalLM",
+            "GravityMoEForCausalLM",
             "DeepseekV32ForCausalLM",
         ]:
             self.hf_config.architectures[0] = "DeepseekV3ForCausalLMNextN"
@@ -926,6 +928,7 @@ class ModelConfig:
             or "DeepseekV32ForCausalLM" in self.hf_config.architectures
             or "DeepseekV3ForCausalLM" in self.hf_config.architectures
             or "DeepseekV3ForCausalLMNextN" in self.hf_config.architectures
+            or "GravityMoEForCausalLM" in self.hf_config.architectures
             or "Glm4MoeLiteForCausalLM" in self.hf_config.architectures
             or "Glm4MoeLiteForCausalLMNextN" in self.hf_config.architectures
             or "GlmMoeDsaForCausalLM" in self.hf_config.architectures

@@ -142,6 +142,7 @@ def handle_model_specific_adjustments(server_args: Any):
 
     if model_arch in [
         "DeepseekV3ForCausalLM",
+        "GravityMoEForCausalLM",
         "DeepseekV32ForCausalLM",
         "KimiK25ForConditionalGeneration",
         "MistralLarge3ForCausalLM",
